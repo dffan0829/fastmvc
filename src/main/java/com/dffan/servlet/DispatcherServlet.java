@@ -3,11 +3,15 @@ package com.dffan.servlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +29,7 @@ import org.dom4j.io.SAXReader;
 
 import com.dffan.annotation.FastController;
 import com.dffan.annotation.FastMapping;
+import com.dffan.annotation.FastParam;
 
 public class DispatcherServlet extends HttpServlet{
  
@@ -125,10 +130,41 @@ public class DispatcherServlet extends HttpServlet{
 		if(!handleMapping.containsKey(url)){
 			super.service(request, response);
 		}else{
+			//获取到所有的请求参数
+			Map<String,Object> map = new LinkedHashMap<>();
+			Enumeration<String> parameterNames = request.getParameterNames();
+			if(parameterNames !=null){
+				while(parameterNames.hasMoreElements()){
+					String paraName = parameterNames.nextElement();
+					String paraVal = request.getParameter(paraName);
+					map.put(paraName, paraVal);
+				}
+			}
 			Method method = (Method) handleMapping.get(url);
 			String controllerName = method.getDeclaringClass().getAnnotation(FastController.class).value().toLowerCase();
+			//将请求参数的值映射到方法的FastPara注解参数上
 			try {
-				method.invoke(IOC.get(controllerName));
+			    Annotation[] parameterAnnotations = method.getDeclaredAnnotations();
+			    if (parameterAnnotations == null || parameterAnnotations.length == 0) {
+			    	throw new Exception("没有定义参数注解！");
+		        }
+			    //存放着映射请求参数的具体值
+			    List<Object> l = new ArrayList<>();
+			    
+				Parameter[] parameters = method.getParameters();
+				for (Parameter parameter : parameters) {
+					Annotation[] annotations = parameter.getAnnotations();
+					for (Annotation annotation : annotations) {
+						if (annotation instanceof FastParam) {
+							String value = ((FastParam) annotation).value();
+							if(map.containsKey(value)){
+								l.add(map.get(value));
+							}
+						}
+					}
+				}	
+				 
+				method.invoke(IOC.get(controllerName),l.toArray());
 			} catch (Exception e) {
 				e.printStackTrace();
 			} 
