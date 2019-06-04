@@ -3,6 +3,7 @@ package com.dffan;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.TreeMap;
 
 import org.junit.Test;
 
@@ -11,10 +12,17 @@ import com.dffan.controller.MyController;
 
 public class AnnotationTest {
 
+
+	@Test
+	public void testTree() {
+		
+		
+	}
+	
 	@Test
 	public void testAnnotation() {
 		Class clazz = MyController.class;
-		Method[] methods = clazz.getMethods();
+		Method[] methods = clazz.getDeclaredMethods();
 		for (Method method : methods) {
 			/*String name = method.getName();
 			if ("getInfo".equals(name)) {
@@ -30,6 +38,11 @@ public class AnnotationTest {
 			}*/
 
 			Parameter[] parameters = method.getParameters();
+			Class<?>[] parameterTypes = method.getParameterTypes();
+			for (Class<?> class1 : parameterTypes) {
+				String name = class1.getName();
+				System.out.println(name);
+			}
 			for (Parameter parameter : parameters) {
 				Annotation[] annotations = parameter.getAnnotations();
 				for (Annotation annotation : annotations) {

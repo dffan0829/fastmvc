@@ -4,11 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -26,10 +26,14 @@ import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
+import org.hamcrest.core.IsInstanceOf;
 
+import com.dffan.annotation.FastComponent;
 import com.dffan.annotation.FastController;
 import com.dffan.annotation.FastMapping;
 import com.dffan.annotation.FastParam;
+import com.dffan.interceptor.FastInterceptorCglib;
+import com.dffan.interceptor.HandleInterceptor;
 
 public class DispatcherServlet extends HttpServlet{
  
@@ -104,7 +108,7 @@ public class DispatcherServlet extends HttpServlet{
 			try {
 				Class<?> clazz = Class.forName(classname);
 				String key = "";
-				//判断类上是否有控制器的注解
+				  //判断类上是否有控制器的注解
 				if(clazz.isAnnotationPresent(FastController.class)){
 					String controllerName = clazz.getDeclaredAnnotation(FastController.class).value();
 					if(controllerName!= null && !controllerName.isEmpty()){
@@ -112,9 +116,15 @@ public class DispatcherServlet extends HttpServlet{
 					}else{
 						key = clazz.getSimpleName().toLowerCase();
 					}
-				}else{
-					key = clazz.getSimpleName().toLowerCase();
-				}
+				}else if(clazz.isAnnotationPresent(FastComponent.class)){
+					//判断类上是否有组件的注解
+					String componentName = clazz.getDeclaredAnnotation(FastComponent.class).value();
+					if(componentName!= null && !componentName.isEmpty()){
+						key = componentName.toLowerCase();
+					}else{
+						key = clazz.getSimpleName().toLowerCase();
+					}
+				} 
 				//创建实例对象 并且放入IOC中
 				IOC.put(key, clazz.newInstance());
 			} catch (Exception e) {
@@ -140,6 +150,9 @@ public class DispatcherServlet extends HttpServlet{
 					map.put(paraName, paraVal);
 				}
 			}
+			//将所有请求参数的key放入数组
+			Object[] keyArray = map.keySet().toArray();
+			
 			Method method = (Method) handleMapping.get(url);
 			String controllerName = method.getDeclaringClass().getAnnotation(FastController.class).value().toLowerCase();
 			//将请求参数的值映射到方法的FastPara注解参数上
@@ -162,9 +175,37 @@ public class DispatcherServlet extends HttpServlet{
 							}
 						}
 					}
+//					for (int i = 0; i < annotations.length; i++) {
+//						for (int j = 0; j < keyArray.length; j++) {
+//							if (annotations[i] instanceof FastParam) {
+//								// 如果当前的方法的入参名称(按照顺序)和url参数key名称对应则add进集合
+//								if (((FastParam) annotations[i]).value().equals(keyArray[j])) {
+//									l.add(map.get(keyArray[j]));
+//								}
+//							}
+//						}
+//					}
 				}	
 				 
-				method.invoke(IOC.get(controllerName),l.toArray());
+				//method.invoke(IOC.get(controllerName),l.toArray());
+				//提供一个接口 类可以实现这个接口 在目标方法执行前后进行调用
+				
+				//在代理去执行目标方法之前 先执行handleInterceptor拦截器....
+				//判断IOC容器中是否有handleInterceptor 组件
+				Collection<Object> instance = IOC.values();
+				for (Object obj : instance) {
+					if(obj instanceof HandleInterceptor){
+						HandleInterceptor handleInterceptor = (HandleInterceptor)obj;
+						//如果preHandle方法执行成功 在执行目标方法 
+						boolean flag = handleInterceptor.preHandle(request, response, IOC.get(controllerName).getClass());
+					}
+				}
+				
+				
+				//cglib动态代理去执行方法 
+				FastInterceptorCglib proxy = new FastInterceptorCglib();
+				Object obj = proxy.getProxy(IOC.get(controllerName).getClass());
+				method.invoke(obj,l.toArray());
 			} catch (Exception e) {
 				e.printStackTrace();
 			} 
