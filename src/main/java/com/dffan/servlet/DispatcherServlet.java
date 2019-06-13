@@ -32,6 +32,14 @@ public class DispatcherServlet extends HttpServlet{
 	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		HandlerMapping requestMappingHandleMapping = new RequestMappingHandleMapping();
 		HandleExecutionChain handleExecutionChain = requestMappingHandleMapping.getHandler(request);
-		handleExecutionChain.handle(request, response);
+		try {
+			if(!handleExecutionChain.preHandle(request, response)){
+				return;
+			}
+			handleExecutionChain.handle(request, response);
+			handleExecutionChain.postHandle(request, response);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }
