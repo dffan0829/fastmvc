@@ -16,7 +16,19 @@ public interface ApplicationContext {
 	 * @return
 	 */
 	public Map<String,Object> createWebContext(String contextConfigLocation);
-	
-	// 后期会加入一些其他创建容器的方式 比如 根据配置类 等
-	
+	/**
+	 * 建立请求和目标方法的映射关系
+	 * @return
+	 */
+	public Map<String,Object>  buildHandleMapping();
+	/**
+	 * 获取到请求和处理器间的mapping映射
+	 * @return
+	 */
+	public Map<String,Object>  getHandleMapping();
+	/**
+	 *  获取到当前的IOC容器
+	 * @return
+	 */
+	public Map<String, Object> getApplicationContext();
 }
