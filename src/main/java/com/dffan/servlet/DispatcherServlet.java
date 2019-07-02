@@ -36,7 +36,8 @@ public class DispatcherServlet extends HttpServlet{
 			if(!handleExecutionChain.preHandle(request, response)){
 				return;
 			}
-			handleExecutionChain.handle(request, response);
+			Object o = handleExecutionChain.handle(request, response);
+			response.getWriter().print(o);
 			handleExecutionChain.postHandle(request, response);
 		} catch (Exception e) {
 			e.printStackTrace();

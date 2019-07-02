@@ -22,7 +22,7 @@ import com.dffan.servlet.HandleExecutionChain;
 
 public class RequestMappingHandleMapping implements HandlerMapping {
 
-	private static Map<String, Object> IOC = new HashMap<>();
+	private static Map<String, Object> IOC = new HashMap<String, Object>();
 
 	{
 		IOC = new AbstractApplicationContext().getApplicationContext();
@@ -33,7 +33,7 @@ public class RequestMappingHandleMapping implements HandlerMapping {
 		String url = request.getRequestURI().replace(request.getContextPath(), "");
 		ApplicationContext applicationContext = new AbstractApplicationContext();
 		// 获取到所有的请求参数
-		Map<String, Object> map = new LinkedHashMap<>();
+		Map<String, Object> map = new LinkedHashMap<String, Object>();
 		Enumeration<String> parameterNames = request.getParameterNames();
 		if (parameterNames != null) {
 			while (parameterNames.hasMoreElements()) {
@@ -45,7 +45,7 @@ public class RequestMappingHandleMapping implements HandlerMapping {
 		Method method = (Method) applicationContext.getHandleMapping().get(url);
 		String controllerName = method.getDeclaringClass().getAnnotation(FastController.class).value().toLowerCase();
 
-		List<Object> l = new ArrayList<>();
+		List<Object> l = new ArrayList<Object>();
 		try {
 			Annotation[] parameterAnnotations = method.getDeclaredAnnotations();
 			if (parameterAnnotations == null || parameterAnnotations.length == 0) {
@@ -71,7 +71,7 @@ public class RequestMappingHandleMapping implements HandlerMapping {
 		
 		// 判断IOC容器中是否有handleInterceptor 组件
 		Collection<Object> instance = IOC.values();
-		List<HandleInterceptor> handleInterceptors = new ArrayList<>();
+		List<HandleInterceptor> handleInterceptors = new ArrayList<HandleInterceptor>();
 		for (Object obj : instance) {
 			if (obj instanceof HandleInterceptor) {
 				HandleInterceptor handleInterceptor = (HandleInterceptor) obj;

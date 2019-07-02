@@ -65,15 +65,16 @@ public class HandleExecutionChain {
 	 * @param response
 	 * @return
 	 */
-	public String handle(HttpServletRequest request, HttpServletResponse response) {
+	public Object handle(HttpServletRequest request, HttpServletResponse response) {
 		FastInterceptorCglib proxy = new FastInterceptorCglib();
 		Object obj = proxy.getProxy(handler.getClass());
+		Object o = null;
 		try {
-			method.invoke(obj, arrays.toArray());
+			o = method.invoke(obj, arrays.toArray());
 		} catch (Exception e) {
 			e.printStackTrace();
 		} 
-		return null;
+		return o;
 	}
 
 	/**
